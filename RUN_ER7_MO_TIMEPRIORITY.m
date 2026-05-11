@@ -8,25 +8,32 @@
 %   Jerk  = 0.10
 %   Energy= 0.10
 %
-% Use this result as the main ER7 experiment if it shortens time while keeping jerk/energy acceptable.
+% Note: this version avoids MATLAB string-scalar replacement and writes
+% a plain char file, which prevents the invalid text character error.
 
 clear; clc; close all;
 rootDir = pwd;
 if endsWith(rootDir,[filesep 'src'])
     rootDir = fileparts(rootDir);
 end
+
 srcFile = fullfile(rootDir,'src','main_er7_mo_trajectory_experiment.m');
 if ~exist(srcFile,'file')
     error('Cannot find src/main_er7_mo_trajectory_experiment.m. Please download latest repo first.');
 end
-code = fileread(srcFile);
-code = strrep(code, "results_er7_multiobjective", "results_er7_mo_timepriority");
-code = strrep(code, "opt.wTime = 0.50; opt.wJerk = 0.25; opt.wEnergy = 0.25;", ...
-                   "opt.wTime = 0.80; opt.wJerk = 0.10; opt.wEnergy = 0.10;");
-code = strrep(code, "ER7 multi-objective experiment starts", "ER7 time-priority multi-objective experiment starts");
 
-tmpFile = fullfile(rootDir,'src','__tmp_er7_mo_timepriority_experiment.m');
-fid = fopen(tmpFile,'w');
-fwrite(fid,code);
+code = fileread(srcFile);
+code = strrep(code, 'results_er7_multiobjective', 'results_er7_mo_timepriority');
+code = strrep(code, 'opt.wTime = 0.50; opt.wJerk = 0.25; opt.wEnergy = 0.25;', ...
+                   'opt.wTime = 0.80; opt.wJerk = 0.10; opt.wEnergy = 0.10;');
+code = strrep(code, 'ER7 multi-objective experiment starts', 'ER7 time-priority multi-objective experiment starts');
+
+tmpFile = fullfile(rootDir,'src','tmp_er7_mo_timepriority_experiment.m');
+fid = fopen(tmpFile,'w','n','UTF-8');
+if fid < 0
+    error('Cannot create temporary experiment file.');
+end
+fwrite(fid, char(code), 'char');
 fclose(fid);
+
 run(tmpFile);
